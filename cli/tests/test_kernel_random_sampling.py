@@ -226,6 +226,26 @@ class WorkflowDefinitionTests(unittest.TestCase):
     def setUpClass(cls):
         cls.workflow = WORKFLOW_PATH.read_text(encoding="utf-8")
 
+    def test_caller_permissions_cover_build_workflow(self):
+        # build.yml 顶层声明 contents: write / actions: write；调用方权限
+        # 低于被调用方会让 GitHub 在启动阶段直接拒绝（startup_failure）。
+        permissions = self.workflow.split("permissions:", 1)[1].split("on:", 1)[0]
+        self.assertIn("contents: write", permissions)
+        self.assertIn("actions: write", permissions)
+
+    def test_matrix_output_only_contains_include(self):
+        # matrix 轴只允许 include（数组）；count/seed/source 混入
+        # fromJSON(matrix) 会导致 strategy 评估失败，build job 全部跳过。
+        sample_job = self.workflow.split("  sample:", 1)[1].split("  build:", 1)[0]
+        matrix_line = next(
+            line for line in sample_job.splitlines() if 'echo "matrix=' in line
+        )
+        self.assertIn("{include: .include}", matrix_line)
+        count_line = next(
+            line for line in sample_job.splitlines() if 'echo "count=' in line
+        )
+        self.assertIn(".count", count_line)
+
     def test_build_job_disables_all_feature_flags(self):
         build_job = self.workflow.split("  build:", 1)[1].split("  result:", 1)[0]
         for flag, expected in (

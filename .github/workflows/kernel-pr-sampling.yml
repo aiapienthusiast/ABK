@@ -100,7 +100,10 @@ jobs:
           python3 .github/scripts/sample-kernel-versions.py "${args[@]}" --output sample.json
 
           {
-            echo "matrix=$(jq -c . sample.json)"
+            # matrix 轴只允许 include（数组）；count/seed/source 是标量，
+            # 混入 fromJSON(matrix) 会导致 strategy 评估失败（startup 报
+            # "unexpected value" 并跳过整个 build job）。
+            echo "matrix=$(jq -c '{include: .include}' sample.json)"
             echo "count=$(jq -r '.count' sample.json)"
           } >> "$GITHUB_OUTPUT"
 
