@@ -133,6 +133,13 @@ def parse_fixed_combo(line: str) -> dict[str, str]:
 
 
 def main() -> None:
+    # Windows runner 的 stdout/stderr 默认按控制台 ANSI 代码页（如 cp936）
+    # 编码，中文消息会被 backslashreplace 成 \uXXXX 转义；强制 UTF-8，
+    # 保证任何平台上错误消息与 JSON 输出一致。
+    for stream in (sys.stdout, sys.stderr):
+        if hasattr(stream, "reconfigure"):
+            stream.reconfigure(encoding="utf-8")
+
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--seed", required=True, help="随机种子（PR 号 + head SHA + run_id）")
     parser.add_argument("--count-min", type=int, default=3, help="最小抽取数量")

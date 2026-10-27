@@ -216,6 +216,9 @@ class SamplerBehaviorTests(unittest.TestCase):
             ],
             capture_output=True,
             text=True,
+            # Windows 子进程管道默认按 ANSI 代码页（cp936）解码；脚本已
+            # reconfigure UTF-8，这里显式按 UTF-8 解码，任何平台一致。
+            encoding="utf-8",
         )
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("候选池", result.stderr)
